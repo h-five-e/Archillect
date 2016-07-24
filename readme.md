@@ -17,7 +17,7 @@ When the app's open, you can tap the screen to show a settings button which will
 ## Todo
 
 * ~~Add readme~~
-* A swanky icon
+* ~~A swanky icon~~
 * ~~Start up the app on boot~~
 * Crossfade images
 * Add auto-on/off settings maybe
