@@ -1,6 +1,7 @@
 package fr.pnksmr.archillect;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -13,42 +14,75 @@ import java.util.concurrent.Callable;
 
 import bolts.Continuation;
 import bolts.Task;
+import io.github.sporklibrary.Spork;
+import io.github.sporklibrary.annotations.BindClick;
+import io.github.sporklibrary.annotations.BindLayout;
+import io.github.sporklibrary.annotations.BindView;
 import twitter4j.Paging;
 import twitter4j.ResponseList;
 import twitter4j.Status;
 import twitter4j.Twitter;
 import twitter4j.TwitterFactory;
 
+@BindLayout(R.layout.activity_main)
 public class MainActivity extends AppCompatActivity {
 
-    private static final int INTERVAL = 60000;
+    private static final int UPDATE_INTERVAL = 60000;
+    private static final int HIDE_UI_DELAY = 3000;
 
-    private ImageView mContentView;
+    @BindView(R.id.content)
+    private View mContentView;
+
+    @BindView(R.id.imageview)
+    private ImageView mImageView;
+
+    @BindView(R.id.settings_fab)
+    private View mSettingsFab;
+
     private Twitter mTwitter;
-    private Handler mTimerHandler = new Handler();
+
+    private Handler mHandler = new Handler();
+
+    private Runnable mGetTweets = new Runnable() {
+        @Override
+        public void run() {
+            getTweets();
+        }
+    };
+
+    private Runnable mHideUi = new Runnable() {
+        @Override
+        public void run() {
+            hideUI();
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_main);
-        mContentView = (ImageView)findViewById(R.id.content);
+        Spork.bind(this);
 
         setupTwitter();
-        getTweets();
     }
 
-    @SuppressLint("InlinedApi")
     @Override
     protected void onResume() {
         super.onResume();
 
+        hideUI();
+        getTweets();
+    }
+
+    @SuppressLint("InlinedApi")
+    private void hideUI() {
         mContentView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE
                 | View.SYSTEM_UI_FLAG_FULLSCREEN
                 | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
                 | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                 | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
+        mSettingsFab.setVisibility(View.INVISIBLE);
     }
 
     private void setupTwitter() {
@@ -57,6 +91,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void getTweets() {
+        mHandler.removeCallbacks(mGetTweets);
+
         Task.callInBackground(new Callable<ResponseList<Status>>() {
             @Override
             public ResponseList<Status> call() throws Exception {
@@ -73,17 +109,24 @@ public class MainActivity extends AppCompatActivity {
         }).onSuccess(new Continuation<String, Void>() {
             @Override
             public Void then(Task<String> task) throws Exception {
-                Picasso.with(MainActivity.this).load(task.getResult()).into(mContentView);
+                Picasso.with(MainActivity.this).load(task.getResult()).into(mImageView);
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
 
-        mTimerHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                getTweets();
-            }
-        }, INTERVAL);
+        mHandler.postDelayed(mGetTweets, UPDATE_INTERVAL);
+    }
+
+    @BindClick(R.id.content)
+    private void onContentClick() {
+        mSettingsFab.setVisibility(View.VISIBLE);
+        mHandler.removeCallbacks(mHideUi);
+        mHandler.postDelayed(mHideUi, HIDE_UI_DELAY);
+    }
+
+    @BindClick(R.id.settings_fab)
+    private void onSettingsClick() {
+        startActivity(new Intent(android.provider.Settings.ACTION_SETTINGS));
     }
 
 }
