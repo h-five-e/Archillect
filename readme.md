@@ -26,7 +26,7 @@ Don't be mad if I don't do my todo's. You're not my mum. Unless it is you in whi
 
 ## Sorry
 
-Sorry that all the code is in the `MainActivity`. I don't thing it's worth the bother to abstract those 100 lines away and end up with triple that amount of code. It does however irk me the tiniest of bits, so there you are. If you want to  though, have at it. The fork button is up there somewhere.
+Sorry that all the code is in the `MainActivity`. I don't think it's worth the bother to abstract those 100 lines away and end up with triple that amount of code. It does however irk me the tiniest of bits, so there you are. If you want to  though, have at it. The fork button is up there somewhere.
 
 ## License
 
