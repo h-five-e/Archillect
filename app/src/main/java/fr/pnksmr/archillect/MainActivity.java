@@ -8,6 +8,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
 
 import java.util.concurrent.Callable;
@@ -29,9 +30,13 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int UPDATE_INTERVAL = 60000;
     private static final int HIDE_UI_DELAY = 3000;
+    private static final int FADE_DURATION = 1000;
 
     @BindView(R.id.content)
     private View mContentView;
+
+    @BindView(R.id.imageview_placeholder)
+    private ImageView mImageViewPlaceholder;
 
     @BindView(R.id.imageview)
     private ImageView mImageView;
@@ -42,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private Twitter mTwitter;
 
     private Handler mHandler = new Handler();
+
+    private String mCurrentUrl;
 
     private Runnable mGetTweets = new Runnable() {
         @Override
@@ -71,6 +78,12 @@ public class MainActivity extends AppCompatActivity {
 
         hideUI();
         getTweets();
+    }
+
+    @Override
+    protected void onPause() {
+        mHandler.removeCallbacks(mGetTweets);
+        super.onPause();
     }
 
     @SuppressLint("InlinedApi")
@@ -109,7 +122,33 @@ public class MainActivity extends AppCompatActivity {
         }).onSuccess(new Continuation<String, Void>() {
             @Override
             public Void then(Task<String> task) throws Exception {
-                Picasso.with(MainActivity.this).load(task.getResult()).into(mImageView);
+
+                String url = task.getResult();
+
+                if (url == null || url.equals(mCurrentUrl)) {
+                    return null;
+                }
+
+                mCurrentUrl = url;
+
+                mImageViewPlaceholder.setImageDrawable(mImageView.getDrawable());
+                mImageView.setAlpha(0f);
+
+                Picasso
+                        .with(MainActivity.this)
+                        .load(task.getResult())
+                        .noFade()
+                        .into(mImageView, new Callback() {
+                            @Override
+                            public void onSuccess() {
+                                mImageView.animate().alpha(1f).setDuration(FADE_DURATION);
+                            }
+
+                            @Override
+                            public void onError() {
+
+                            }
+                        });
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
